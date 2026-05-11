@@ -679,6 +679,54 @@ div[data-testid="stDataFrame"] {
         font-size: 2.4rem;
     }
 }
+.quick-nav-spacer {
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
+
+.quick-nav-caption {
+    color: rgba(255,255,255,0.48);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.quick-nav-row button {
+    min-height: 34px !important;
+    padding: 7px 13px !important;
+    border-radius: 999px !important;
+    background: rgba(230, 27, 31, 0.14) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(230, 27, 31, 0.36) !important;
+    font-size: 0.72rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.10em !important;
+    text-transform: uppercase !important;
+    box-shadow: none !important;
+}
+
+.quick-nav-row button:hover {
+    background: #E61B1F !important;
+    color: #FFFFFF !important;
+    border: 1px solid #E61B1F !important;
+    transform: translateY(-1px);
+}
+
+div[data-testid="stRadio"] label {
+    color: rgba(255,255,255,0.72) !important;
+    font-weight: 850 !important;
+}
+
+div[data-testid="stRadio"] [role="radiogroup"] {
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
+    border: 1px solid rgba(230,27,31,0.20);
+    border-radius: 18px;
+    padding: 10px;
+}
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -906,6 +954,9 @@ if "user_plan" not in st.session_state:
 if "selected_vehicle" not in st.session_state:
     st.session_state.selected_vehicle = VEHICLE_OPTIONS[0]
 
+if "fleet_selected_tab" not in st.session_state:
+    st.session_state.fleet_selected_tab = "OVERVIEW"
+
 
 # =============================================================================
 # HELPERS
@@ -1085,13 +1136,41 @@ def render_header(title, subtitle):
 <div class="soft-value">{fuel["money_saved_month"]:.0f} €</div>
 </div>
 </div>
-<span class="pill">Investor Demo</span>
-<span class="pill-white">Plan-Based UI</span>
-<span class="pill-white">Cloud Sync Active</span>
 </div>
         """,
         unsafe_allow_html=True,
     )
+
+    if st.session_state.logged_in and st.session_state.user_role == "Fleet Manager":
+        st.markdown(
+            """
+<div class="quick-nav-spacer">
+<div class="quick-nav-caption">Quick Actions</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown('<div class="quick-nav-row">', unsafe_allow_html=True)
+
+        q1, q2, q3 = st.columns([1, 1, 1])
+
+        with q1:
+            if st.button("Maintenance", key="quick_maintenance", use_container_width=True):
+                st.session_state.fleet_selected_tab = "MAINTENANCE"
+                st.rerun()
+
+        with q2:
+            if st.button("Smart Fueling", key="quick_fuel", use_container_width=True):
+                st.session_state.fleet_selected_tab = "FUEL"
+                st.rerun()
+
+        with q3:
+            if st.button("Cost Efficiency", key="quick_cost", use_container_width=True):
+                st.session_state.fleet_selected_tab = "COST EFFICIENCY"
+                st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # =============================================================================
@@ -2061,20 +2140,31 @@ def render_fleet_dashboard():
     k5.markdown(metric_card("Diesel Price", f"{price:.3f} €/L", "Market monitor"), unsafe_allow_html=True)
     k6.markdown(metric_card("Plan", current_plan(), "Fleet subscription"), unsafe_allow_html=True)
 
-    tabs = st.tabs(
-        [
-            "OVERVIEW",
-            "LIVE TELEMETRY",
-            "MAP INTELLIGENCE",
-            "MAINTENANCE",
-            "FUEL",
-            "REPORTS",
-            "ENTERPRISE",
-            "PLAN",
-        ]
+    fleet_pages = [
+        "OVERVIEW",
+        "LIVE TELEMETRY",
+        "MAP INTELLIGENCE",
+        "MAINTENANCE",
+        "FUEL",
+        "COST EFFICIENCY",
+        "REPORTS",
+        "ENTERPRISE",
+        "PLAN",
+    ]
+
+    selected_page = st.radio(
+        "Fleet Navigation",
+        fleet_pages,
+        horizontal=True,
+        index=fleet_pages.index(st.session_state.fleet_selected_tab),
+        key="fleet_navigation_radio",
     )
 
-    with tabs[0]:
+    st.session_state.fleet_selected_tab = selected_page
+
+    st.markdown("---")
+
+    if selected_page == "OVERVIEW":
         o1, o2, o3 = st.columns([1.2, 1, 1])
 
         with o1:
@@ -2091,7 +2181,7 @@ def render_fleet_dashboard():
             st.metric("AI Alert Rate", "4.3 / hr", "Active monitoring")
             st.metric("Avg Driver Score", "88 / 100", "+0.6 pts")
 
-    with tabs[1]:
+    elif selected_page == "LIVE TELEMETRY":
         if has_feature("obd"):
             live_col1, live_col2 = st.columns([2.3, 1])
             telemetry_box = live_col1.empty()
@@ -2103,7 +2193,7 @@ def render_fleet_dashboard():
                 """
 <div class="terminal-log">
 <span class="log-time">[SYS]</span>
-Standing by. Click START LIVE STREAM to start telemetry simulation.
+Standing by. Click LIVE STREAM from the sidebar to start telemetry simulation.
 </div>
                 """,
                 unsafe_allow_html=True,
@@ -2156,7 +2246,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock RPM, speed, fuel use, fault data and live CAN bus telemetry across the fleet.",
             )
 
-    with tabs[2]:
+    elif selected_page == "MAP INTELLIGENCE":
         if has_feature("fleet_gps"):
             map_col, route_col = st.columns([2.2, 1])
             map_box = map_col.empty()
@@ -2177,7 +2267,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock route monitoring, vehicle position, geofence status and fleet movement history.",
             )
 
-    with tabs[3]:
+    elif selected_page == "MAINTENANCE":
         if has_feature("maintenance"):
             m1, m2 = st.columns([1.2, 1])
 
@@ -2199,6 +2289,19 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                     """,
                     unsafe_allow_html=True,
                 )
+
+            st.markdown(
+                """
+<div class="premium-card-red">
+<div class="card-title">Maintenance Intelligence</div>
+<div class="card-text">
+TUCFLEET monitors vehicle health, detects early warning signs and helps operators
+schedule maintenance before costly breakdowns happen.
+</div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
         else:
             upgrade_card(
                 "Predictive Maintenance",
@@ -2206,7 +2309,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock maintenance alerts, health scoring, fault trends and service planning.",
             )
 
-    with tabs[4]:
+    elif selected_page == "FUEL":
         if has_feature("fuel"):
             f1, f2 = st.columns([1.1, 1])
             fuel_box = f1.empty()
@@ -2221,7 +2324,46 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock fuel savings, diesel price monitoring and refuel-window notifications.",
             )
 
-    with tabs[5]:
+    elif selected_page == "COST EFFICIENCY":
+        if has_feature("fuel"):
+            c1, c2, c3, c4 = st.columns(4)
+
+            c1.metric("Monthly Fuel Cost", f"{fuel['monthly_liters'] * price:,.0f} €")
+            c2.metric("Monthly Saving", f"{fuel['money_saved_month']:,.0f} €", f"{fuel['liters_saved']:.0f} L saved")
+            c3.metric("Annual Saving", f"{fuel['annual_saving']:,.0f} €")
+            c4.metric("Optimized / 100km", f"{fuel['cost_100_optimized']:.1f} €")
+
+            st.markdown(
+                f"""
+<div class="premium-card-red">
+<div class="card-title">Cost Efficiency Engine</div>
+<div class="card-text">
+TUCFLEET estimates the financial impact of optimized driving behavior, better fuel timing
+and reduced consumption. For selected asset <strong>{get_asset_id()}</strong>, estimated
+monthly fuel saving is <strong>{fuel['money_saved_month']:.0f}€</strong>, with annual
+saving around <strong>{fuel['annual_saving']:.0f}€</strong>.
+</div>
+<br>
+{status_row("Current Diesel Price", f"{price:.3f} €/L")}
+{status_row("Monthly Distance", f"{fuel['monthly_km']:,} km")}
+{status_row("Average Consumption", f"{fuel['avg_consumption']:.1f} L/100km")}
+{status_row("Optimized Cost / 100km", f"{fuel['cost_100_optimized']:.1f} €")}
+{status_row("Reduction Model", f"{fuel['reduction']:.1f}%")}
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            chart_box = st.empty()
+            render_fuel_chart(chart_box, live=False)
+        else:
+            upgrade_card(
+                "Cost Efficiency",
+                "Fleet Pro",
+                "Unlock cost saving analytics, fuel optimization and operational efficiency metrics.",
+            )
+
+    elif selected_page == "REPORTS":
         if has_feature("reports"):
             alert_data = pd.DataFrame(
                 [
@@ -2255,7 +2397,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock operational reports, alert summaries, fuel performance and maintenance exports.",
             )
 
-    with tabs[6]:
+    elif selected_page == "ENTERPRISE":
         if has_feature("api"):
             st.markdown(
                 f"""
@@ -2277,7 +2419,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock API access, custom reports, long-term data retention and priority support.",
             )
 
-    with tabs[7]:
+    elif selected_page == "PLAN":
         render_plan_calculator(key_prefix="fleet")
 
 
