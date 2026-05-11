@@ -82,7 +82,7 @@ st.markdown(
     color: #F5F5F5 !important;
 }
 
-[data-testid="stSidebar"] img {
+[data-testid="stSidebar"] img {render_header
     background: transparent !important;
     border: none !important;
     border-radius: 0 !important;
@@ -906,6 +906,9 @@ if "user_plan" not in st.session_state:
 if "selected_vehicle" not in st.session_state:
     st.session_state.selected_vehicle = VEHICLE_OPTIONS[0]
 
+if "fleet_selected_tab" not in st.session_state:
+    st.session_state.fleet_selected_tab = "OVERVIEW"
+
 
 # =============================================================================
 # HELPERS
@@ -1085,14 +1088,10 @@ def render_header(title, subtitle):
 <div class="soft-value">{fuel["money_saved_month"]:.0f} €</div>
 </div>
 </div>
-<span class="pill">Investor Demo</span>
-<span class="pill-white">Plan-Based UI</span>
-<span class="pill-white">Cloud Sync Active</span>
 </div>
         """,
         unsafe_allow_html=True,
     )
-
 
 # =============================================================================
 # CHARTS
@@ -2048,6 +2047,22 @@ def render_fleet_dashboard():
         "Fleet Manager Dashboard",
         "Full fleet monitoring with plan-based access to GPS, OBD/CAN telemetry, predictive maintenance, fuel intelligence and reports.",
     )
+    nav1, nav2, nav3 = st.columns(3)
+
+    with nav1:
+        if st.button("MAINTENANCE", use_container_width=True):
+            st.session_state.fleet_selected_tab = "MAINTENANCE"
+            st.rerun()
+
+    with nav2:
+        if st.button("SMART FUELING", use_container_width=True):
+            st.session_state.fleet_selected_tab = "FUEL"
+            st.rerun()
+
+    with nav3:
+        if st.button("COST EFFICIENCY", use_container_width=True):
+            st.session_state.fleet_selected_tab = "COST EFFICIENCY"
+            st.rerun()
 
     profile = get_profile()
     price = current_diesel_price()
