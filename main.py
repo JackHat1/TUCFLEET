@@ -2061,19 +2061,98 @@ def render_fleet_dashboard():
     k5.markdown(metric_card("Diesel Price", f"{price:.3f} €/L", "Market monitor"), unsafe_allow_html=True)
     k6.markdown(metric_card("Plan", current_plan(), "Fleet subscription"), unsafe_allow_html=True)
 
-maintenance_tab , fuel_tab, reports_tab ,overview_tab, live_tab, map_tab, enterprise_tab, plan_tab = st.tabs(
-    [   "MAINTENANCE",
-        "FUEL",
-        "REPORTS",
-        "OVERVIEW",
-        "LIVE TELEMETRY",
-        "MAP INTELLIGENCE",
-        "ENTERPRISE",
-        "PLAN",
-    ]
-)
+    maintenance_tab, fuel_tab, reports_tab, overview_tab, live_tab, map_tab, enterprise_tab, plan_tab = st.tabs(
+        [
+            "MAINTENANCE",
+            "FUEL",
+            "REPORTS",
+            "OVERVIEW",
+            "LIVE TELEMETRY",
+            "MAP INTELLIGENCE",
+            "ENTERPRISE",
+            "PLAN",
+        ]
+    )
 
-    with tabs[0]:
+    with maintenance_tab:
+        if has_feature("maintenance"):
+            m1, m2 = st.columns([1.2, 1])
+
+            radar_box = m1.empty()
+            render_radar(radar_box, live=False)
+
+            with m2:
+                st.markdown(
+                    f"""
+<div class="premium-card-red">
+<div class="card-title">Predictive Maintenance Engine</div>
+{status_row("Engine", "Nominal")}
+{status_row("Transmission", "Notice")}
+{status_row("Brakes", "62% Wear")}
+{status_row("DPF", "Regeneration due in 380 km")}
+{status_row("Battery", "Stable")}
+{status_row("Edge Gateway", "Synced")}
+</div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        else:
+            upgrade_card(
+                "Predictive Maintenance",
+                "Fleet Pro",
+                "Unlock maintenance alerts, health scoring, fault trends and service planning.",
+            )
+
+    with fuel_tab:
+        if has_feature("fuel"):
+            f1, f2 = st.columns([1.1, 1])
+            fuel_box = f1.empty()
+            fuel_chart_box = f2.empty()
+
+            render_fuel_intelligence(fuel_box, live=False)
+            render_fuel_chart(fuel_chart_box, live=False)
+        else:
+            upgrade_card(
+                "Fuel Intelligence",
+                "Fleet Pro",
+                "Unlock fuel savings, diesel price monitoring and refuel-window notifications.",
+            )
+
+    with reports_tab:
+        if has_feature("reports"):
+            alert_data = pd.DataFrame(
+                [
+                    ["09:20", "FX-8801", "Transmission torque drift", "High", "320 km"],
+                    ["08:54", "FX-8803", "Harsh braking event", "Medium", "Immediate"],
+                    ["08:16", "FX-8804", "Fuel efficiency deviation", "Medium", "Route active"],
+                    ["07:41", "FX-8805", "Brake wear threshold", "Low", "3,125 km"],
+                    ["06:15", "FX-8802", "Battery voltage drift", "Medium", "720 km"],
+                ],
+                columns=["Timestamp", "Asset", "Alert", "Severity", "ETA"],
+            )
+
+            vehicle_data = pd.DataFrame(
+                [
+                    ["FX-8801", "Warning", 86, "10.8%", "3 days", "Medium"],
+                    ["FX-8802", "Healthy", 93, "14.1%", "18 days", "Low"],
+                    ["FX-8803", "Review", 79, "8.9%", "5 days", "High"],
+                    ["FX-8804", "Healthy", 91, "15.6%", "22 days", "Low"],
+                    ["FX-8805", "Warning", 84, "11.7%", "7 days", "Medium"],
+                ],
+                columns=["Asset", "Status", "Driver Score", "Fuel Reduction", "Next Service", "Risk"],
+            )
+
+            r1, r2 = st.columns(2)
+            r1.dataframe(alert_data, use_container_width=True, hide_index=True)
+            r2.dataframe(vehicle_data, use_container_width=True, hide_index=True)
+        else:
+            upgrade_card(
+                "Fleet Reports",
+                "Fleet Pro",
+                "Unlock operational reports, alert summaries, fuel performance and maintenance exports.",
+            )
+
+    with overview_tab:
         o1, o2, o3 = st.columns([1.2, 1, 1])
 
         with o1:
@@ -2090,7 +2169,7 @@ maintenance_tab , fuel_tab, reports_tab ,overview_tab, live_tab, map_tab, enterp
             st.metric("AI Alert Rate", "4.3 / hr", "Active monitoring")
             st.metric("Avg Driver Score", "88 / 100", "+0.6 pts")
 
-    with tabs[1]:
+    with live_tab:
         if has_feature("obd"):
             live_col1, live_col2 = st.columns([2.3, 1])
             telemetry_box = live_col1.empty()
@@ -2155,7 +2234,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock RPM, speed, fuel use, fault data and live CAN bus telemetry across the fleet.",
             )
 
-    with tabs[2]:
+    with map_tab:
         if has_feature("fleet_gps"):
             map_col, route_col = st.columns([2.2, 1])
             map_box = map_col.empty()
@@ -2176,85 +2255,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock route monitoring, vehicle position, geofence status and fleet movement history.",
             )
 
-    with tabs[3]:
-        if has_feature("maintenance"):
-            m1, m2 = st.columns([1.2, 1])
-
-            radar_box = m1.empty()
-            render_radar(radar_box, live=False)
-
-            with m2:
-                st.markdown(
-                    f"""
-<div class="premium-card-red">
-<div class="card-title">Predictive Maintenance Engine</div>
-{status_row("Engine", "Nominal")}
-{status_row("Transmission", "Notice")}
-{status_row("Brakes", "62% Wear")}
-{status_row("DPF", "Regeneration due in 380 km")}
-{status_row("Battery", "Stable")}
-{status_row("Edge Gateway", "Synced")}
-</div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
-            upgrade_card(
-                "Predictive Maintenance",
-                "Fleet Pro",
-                "Unlock maintenance alerts, health scoring, fault trends and service planning.",
-            )
-
-    with tabs[4]:
-        if has_feature("fuel"):
-            f1, f2 = st.columns([1.1, 1])
-            fuel_box = f1.empty()
-            fuel_chart_box = f2.empty()
-
-            render_fuel_intelligence(fuel_box, live=False)
-            render_fuel_chart(fuel_chart_box, live=False)
-        else:
-            upgrade_card(
-                "Fuel Intelligence",
-                "Fleet Pro",
-                "Unlock fuel savings, diesel price monitoring and refuel-window notifications.",
-            )
-
-    with tabs[5]:
-        if has_feature("reports"):
-            alert_data = pd.DataFrame(
-                [
-                    ["09:20", "FX-8801", "Transmission torque drift", "High", "320 km"],
-                    ["08:54", "FX-8803", "Harsh braking event", "Medium", "Immediate"],
-                    ["08:16", "FX-8804", "Fuel efficiency deviation", "Medium", "Route active"],
-                    ["07:41", "FX-8805", "Brake wear threshold", "Low", "3,125 km"],
-                    ["06:15", "FX-8802", "Battery voltage drift", "Medium", "720 km"],
-                ],
-                columns=["Timestamp", "Asset", "Alert", "Severity", "ETA"],
-            )
-
-            vehicle_data = pd.DataFrame(
-                [
-                    ["FX-8801", "Warning", 86, "10.8%", "3 days", "Medium"],
-                    ["FX-8802", "Healthy", 93, "14.1%", "18 days", "Low"],
-                    ["FX-8803", "Review", 79, "8.9%", "5 days", "High"],
-                    ["FX-8804", "Healthy", 91, "15.6%", "22 days", "Low"],
-                    ["FX-8805", "Warning", 84, "11.7%", "7 days", "Medium"],
-                ],
-                columns=["Asset", "Status", "Driver Score", "Fuel Reduction", "Next Service", "Risk"],
-            )
-
-            r1, r2 = st.columns(2)
-            r1.dataframe(alert_data, use_container_width=True, hide_index=True)
-            r2.dataframe(vehicle_data, use_container_width=True, hide_index=True)
-        else:
-            upgrade_card(
-                "Fleet Reports",
-                "Fleet Pro",
-                "Unlock operational reports, alert summaries, fuel performance and maintenance exports.",
-            )
-
-    with tabs[6]:
+    with enterprise_tab:
         if has_feature("api"):
             st.markdown(
                 f"""
@@ -2276,10 +2277,8 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock API access, custom reports, long-term data retention and priority support.",
             )
 
-    with tabs[7]:
+    with plan_tab:
         render_plan_calculator(key_prefix="fleet")
-
-
 # =============================================================================
 # ADMIN DASHBOARD
 # =============================================================================
