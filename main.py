@@ -2061,20 +2061,20 @@ def render_fleet_dashboard():
     k5.markdown(metric_card("Diesel Price", f"{price:.3f} €/L", "Market monitor"), unsafe_allow_html=True)
     k6.markdown(metric_card("Plan", current_plan(), "Fleet subscription"), unsafe_allow_html=True)
 
-    tabs = st.tabs(
+    overview_tab, maintenance_tab, fuel_tab, reports_tab, live_tab, map_tab, enterprise_tab, plan_tab = st.tabs(
         [
             "OVERVIEW",
-            "LIVE TELEMETRY",
-            "MAP INTELLIGENCE",
             "MAINTENANCE",
             "FUEL",
             "REPORTS",
+            "LIVE TELEMETRY",
+            "MAP INTELLIGENCE",
             "ENTERPRISE",
             "PLAN",
         ]
     )
 
-    with tabs[0]:
+   with overview_tab:
         o1, o2, o3 = st.columns([1.2, 1, 1])
 
         with o1:
@@ -2090,8 +2090,7 @@ def render_fleet_dashboard():
             st.metric("Connected Units", "48 / 50", "96% online")
             st.metric("AI Alert Rate", "4.3 / hr", "Active monitoring")
             st.metric("Avg Driver Score", "88 / 100", "+0.6 pts")
-
-    with tabs[1]:
+with live_tab:
         if has_feature("obd"):
             live_col1, live_col2 = st.columns([2.3, 1])
             telemetry_box = live_col1.empty()
@@ -2156,7 +2155,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock RPM, speed, fuel use, fault data and live CAN bus telemetry across the fleet.",
             )
 
-    with tabs[2]:
+    with map_tab:
         if has_feature("fleet_gps"):
             map_col, route_col = st.columns([2.2, 1])
             map_box = map_col.empty()
@@ -2177,7 +2176,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock route monitoring, vehicle position, geofence status and fleet movement history.",
             )
 
-    with tabs[3]:
+    with maintenance_tab:
         if has_feature("maintenance"):
             m1, m2 = st.columns([1.2, 1])
 
@@ -2206,7 +2205,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock maintenance alerts, health scoring, fault trends and service planning.",
             )
 
-    with tabs[4]:
+    with fuel_tab:
         if has_feature("fuel"):
             f1, f2 = st.columns([1.1, 1])
             fuel_box = f1.empty()
@@ -2221,7 +2220,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock fuel savings, diesel price monitoring and refuel-window notifications.",
             )
 
-    with tabs[5]:
+    with reports_tab:
         if has_feature("reports"):
             alert_data = pd.DataFrame(
                 [
@@ -2255,7 +2254,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock operational reports, alert summaries, fuel performance and maintenance exports.",
             )
 
-    with tabs[6]:
+    with enterprise_tab:
         if has_feature("api"):
             st.markdown(
                 f"""
@@ -2277,7 +2276,7 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                 "Unlock API access, custom reports, long-term data retention and priority support.",
             )
 
-    with tabs[7]:
+    with plan_tab:
         render_plan_calculator(key_prefix="fleet")
 
 
