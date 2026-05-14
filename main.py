@@ -679,6 +679,33 @@ div[data-testid="stDataFrame"] {
         font-size: 2.4rem;
     }
 }
+/* LIVE TELEMETRY PRO */
+.telemetry-hero {
+    background:
+        radial-gradient(circle at top right, rgba(230,27,31,0.22), transparent 34%),
+        linear-gradient(145deg, rgba(8,8,8,0.99), rgba(18,18,18,0.96));
+    border: 1px solid rgba(230,27,31,0.36);
+    border-left: 4px solid #E61B1F;
+    border-radius: 22px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.42);
+}
+
+.telemetry-section-title {
+    color: #FFFFFF;
+    font-size: 1.02rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.telemetry-section-subtitle {
+    color: rgba(255,255,255,0.66);
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
 </style>
     """,
     unsafe_allow_html=True,
@@ -1152,24 +1179,41 @@ def render_telemetry_chart(target, iteration=0, live=False):
 
 def render_driver_inputs(target, iteration=0, live=False):
     if live:
-        throttle = 45 + np.sin(iteration / 4) * 28 + np.random.randn() * 4
-        brake = max(0, 18 + np.sin(iteration / 6 + 2.4) * 22 + np.random.randn() * 5)
+        throttle = 46 + np.sin(iteration / 4.2) * 30 + np.random.randn() * 3.5
+        brake = 7 + np.sin(iteration / 6.5 + 2.2) * 18 + np.random.randn() * 4
 
-        if iteration % 19 in [0, 1, 2]:
-            brake = 72 + np.random.randn() * 6
-            throttle = 12 + np.random.randn() * 3
+        if iteration % 23 in [0, 1, 2]:
+            brake = 76 + np.random.randn() * 5
+            throttle = 10 + np.random.randn() * 3
+
+        if iteration % 31 in [8, 9, 10]:
+            throttle = 86 + np.random.randn() * 4
+            brake = 4 + np.random.randn() * 2
 
         throttle = float(np.clip(throttle, 0, 100))
         brake = float(np.clip(brake, 0, 100))
-        speed = int(max(0, 68 + np.sin(iteration / 7) * 18 + np.random.randn() * 3))
-        rpm = int(max(850, 2350 + np.sin(iteration / 5) * 650 + np.random.randn() * 80))
-        fuel_rate = float(max(2.0, 8.8 + np.sin(iteration / 9) * 1.1 + np.random.randn() * 0.15))
+        speed = int(max(0, 72 + np.sin(iteration / 7.0) * 20 + np.random.randn() * 3))
+        rpm = int(max(850, 2400 + np.sin(iteration / 5.5) * 720 + np.random.randn() * 75))
+        fuel_rate = float(max(2.0, 8.8 + np.sin(iteration / 8.5) * 1.15 + np.random.randn() * 0.12))
     else:
         throttle = 38.0
-        brake = 6.0
+        brake = 4.0
         speed = 0
         rpm = 920
         fuel_rate = 2.4
+
+    if brake > 72:
+        driver_state = "Hard Braking"
+    elif throttle > 82:
+        driver_state = "Aggressive Acceleration"
+    elif throttle > 55 and brake < 15:
+        driver_state = "Acceleration"
+    elif brake > 30:
+        driver_state = "Deceleration"
+    elif speed == 0:
+        driver_state = "Standby"
+    else:
+        driver_state = "Normal Driving"
 
     fig = go.Figure()
 
@@ -1177,21 +1221,42 @@ def render_driver_inputs(target, iteration=0, live=False):
         go.Indicator(
             mode="gauge+number",
             value=throttle,
-            title={"text": "Throttle", "font": {"color": WHITE, "size": 16}},
-            number={"suffix": "%", "font": {"color": WHITE, "size": 28}},
-            gauge={
-                "axis": {"range": [0, 100], "tickcolor": WHITE},
-                "bar": {"color": RED},
-                "bgcolor": "rgba(255,255,255,0.04)",
-                "borderwidth": 1,
-                "bordercolor": "rgba(255,255,255,0.16)",
-                "steps": [
-                    {"range": [0, 30], "color": "rgba(255,255,255,0.06)"},
-                    {"range": [30, 70], "color": "rgba(230,27,31,0.16)"},
-                    {"range": [70, 100], "color": "rgba(230,27,31,0.30)"},
-                ],
+            title={
+                "text": "<b>THROTTLE</b><br><span style='font-size:12px;color:rgba(255,255,255,0.55)'>Pedal Position</span>",
+                "font": {"color": WHITE, "size": 18},
             },
-            domain={"x": [0.00, 0.48], "y": [0.08, 1.0]},
+            number={
+                "suffix": "%",
+                "font": {"color": WHITE, "size": 46},
+                "valueformat": ".0f",
+            },
+            gauge={
+                "shape": "angular",
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "rgba(255,255,255,0.55)",
+                    "tickfont": {"color": "rgba(255,255,255,0.70)", "size": 10},
+                },
+                "bar": {
+                    "color": RED,
+                    "thickness": 0.28,
+                },
+                "bgcolor": "rgba(255,255,255,0.035)",
+                "borderwidth": 1,
+                "bordercolor": "rgba(255,255,255,0.13)",
+                "steps": [
+                    {"range": [0, 30], "color": "rgba(255,255,255,0.055)"},
+                    {"range": [30, 70], "color": "rgba(230,27,31,0.13)"},
+                    {"range": [70, 100], "color": "rgba(230,27,31,0.26)"},
+                ],
+                "threshold": {
+                    "line": {"color": "#FFFFFF", "width": 3},
+                    "thickness": 0.78,
+                    "value": 85,
+                },
+            },
+            domain={"x": [0.00, 0.48], "y": [0.12, 1.0]},
         )
     )
 
@@ -1199,21 +1264,42 @@ def render_driver_inputs(target, iteration=0, live=False):
         go.Indicator(
             mode="gauge+number",
             value=brake,
-            title={"text": "Brake", "font": {"color": WHITE, "size": 16}},
-            number={"suffix": "%", "font": {"color": WHITE, "size": 28}},
-            gauge={
-                "axis": {"range": [0, 100], "tickcolor": WHITE},
-                "bar": {"color": WHITE},
-                "bgcolor": "rgba(255,255,255,0.04)",
-                "borderwidth": 1,
-                "bordercolor": "rgba(255,255,255,0.16)",
-                "steps": [
-                    {"range": [0, 30], "color": "rgba(255,255,255,0.06)"},
-                    {"range": [30, 70], "color": "rgba(255,255,255,0.13)"},
-                    {"range": [70, 100], "color": "rgba(230,27,31,0.30)"},
-                ],
+            title={
+                "text": "<b>BRAKE</b><br><span style='font-size:12px;color:rgba(255,255,255,0.55)'>Pressure Input</span>",
+                "font": {"color": WHITE, "size": 18},
             },
-            domain={"x": [0.52, 1.00], "y": [0.08, 1.0]},
+            number={
+                "suffix": "%",
+                "font": {"color": WHITE, "size": 46},
+                "valueformat": ".0f",
+            },
+            gauge={
+                "shape": "angular",
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "rgba(255,255,255,0.55)",
+                    "tickfont": {"color": "rgba(255,255,255,0.70)", "size": 10},
+                },
+                "bar": {
+                    "color": WHITE,
+                    "thickness": 0.28,
+                },
+                "bgcolor": "rgba(255,255,255,0.035)",
+                "borderwidth": 1,
+                "bordercolor": "rgba(255,255,255,0.13)",
+                "steps": [
+                    {"range": [0, 30], "color": "rgba(255,255,255,0.055)"},
+                    {"range": [30, 70], "color": "rgba(255,255,255,0.13)"},
+                    {"range": [70, 100], "color": "rgba(230,27,31,0.28)"},
+                ],
+                "threshold": {
+                    "line": {"color": RED, "width": 3},
+                    "thickness": 0.78,
+                    "value": 75,
+                },
+            },
+            domain={"x": [0.52, 1.00], "y": [0.12, 1.0]},
         )
     )
 
@@ -1221,36 +1307,60 @@ def render_driver_inputs(target, iteration=0, live=False):
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=WHITE),
-        margin=dict(l=0, r=0, t=10, b=0),
-        height=260,
+        font=dict(color=WHITE, family="Inter, Arial, sans-serif"),
+        margin=dict(l=0, r=0, t=18, b=0),
+        height=330,
     )
 
     with target.container():
-        st.plotly_chart(fig, use_container_width=True, key=f"driver_inputs_{iteration}_{live}_{id(target)}")
-
-        d1, d2, d3, d4 = st.columns(4)
-        d1.metric("Speed", f"{speed} km/h")
-        d2.metric("RPM", f"{rpm:,}")
-        d3.metric("Throttle", f"{throttle:.0f}%")
-        d4.metric("Brake", f"{brake:.0f}%")
-
         st.markdown(
-            f"""
+            """
 <div class="premium-card-red">
-<div class="card-title">Driver Input Telemetry</div>
-{status_row("Throttle Position", f"{throttle:.1f}%")}
-{status_row("Brake Pressure", f"{brake:.1f}%")}
-{status_row("Engine Speed", f"{rpm:,} RPM")}
-{status_row("Vehicle Speed", f"{speed} km/h")}
-{status_row("Fuel Rate", f"{fuel_rate:.1f} L/100km")}
-{status_row("Driver Status", "Hard braking detected" if brake > 70 else "Normal driving")}
+<div class="card-title">Driver Input Module</div>
+<div class="card-text">
+Live throttle and brake input from driver control channels.
+</div>
 </div>
             """,
             unsafe_allow_html=True,
         )
 
-    return throttle, brake, speed, rpm, fuel_rate
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            key=f"driver_inputs_gauge_{iteration}_{live}_{id(target)}",
+        )
+
+        d1, d2, d3 = st.columns(3)
+
+        d1.markdown(
+            metric_card("Vehicle Speed", f"{speed}", "km/h"),
+            unsafe_allow_html=True,
+        )
+        d2.markdown(
+            metric_card("Engine Speed", f"{rpm:,}", "RPM"),
+            unsafe_allow_html=True,
+        )
+        d3.markdown(
+            metric_card("Fuel Rate", f"{fuel_rate:.1f}", "L/100km"),
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            f"""
+<div class="premium-card-red">
+<div class="card-title">Driver State</div>
+{status_row("Detected State", driver_state)}
+{status_row("Throttle Position", f"{throttle:.1f}%")}
+{status_row("Brake Pressure", f"{brake:.1f}%")}
+{status_row("Vehicle Speed", f"{speed} km/h")}
+{status_row("Engine Speed", f"{rpm:,} RPM")}
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    return throttle, brake, speed, rpm, fuel_rate, driver_state
 
 
 def render_fuel_chart(target, iteration=0, live=False):
@@ -2274,17 +2384,17 @@ def render_fleet_dashboard():
     with live_tab:
         if has_feature("obd"):
             st.markdown(
-                """
-<div class="premium-card-red">
-<div class="card-title">Live Telemetry Stream</div>
-<div class="card-text">
-Real-time vehicle telemetry with CAN/OBD data, driver throttle and brake input,
-RPM, speed, fuel rate and event detection.
+    """
+<div class="telemetry-hero">
+<div class="telemetry-section-title">Live Telemetry Stream</div>
+<div class="telemetry-section-subtitle">
+Professional real-time CAN/OBD telemetry view with RPM, speed, fuel use,
+driver throttle/brake input and live event detection.
 </div>
 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    """,
+    unsafe_allow_html=True,
+)
 
             live_col1, live_col2 = st.columns([1.55, 1])
 
