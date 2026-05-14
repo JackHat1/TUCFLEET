@@ -1150,6 +1150,108 @@ def render_telemetry_chart(target, iteration=0, live=False):
 
     target.plotly_chart(fig, use_container_width=True, key=f"telemetry_{iteration}_{live}_{id(target)}")
 
+def render_driver_inputs(target, iteration=0, live=False):
+    if live:
+        throttle = 45 + np.sin(iteration / 4) * 28 + np.random.randn() * 4
+        brake = max(0, 18 + np.sin(iteration / 6 + 2.4) * 22 + np.random.randn() * 5)
+
+        if iteration % 19 in [0, 1, 2]:
+            brake = 72 + np.random.randn() * 6
+            throttle = 12 + np.random.randn() * 3
+
+        throttle = float(np.clip(throttle, 0, 100))
+        brake = float(np.clip(brake, 0, 100))
+        speed = int(max(0, 68 + np.sin(iteration / 7) * 18 + np.random.randn() * 3))
+        rpm = int(max(850, 2350 + np.sin(iteration / 5) * 650 + np.random.randn() * 80))
+        fuel_rate = float(max(2.0, 8.8 + np.sin(iteration / 9) * 1.1 + np.random.randn() * 0.15))
+    else:
+        throttle = 38.0
+        brake = 6.0
+        speed = 0
+        rpm = 920
+        fuel_rate = 2.4
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=throttle,
+            title={"text": "Throttle", "font": {"color": WHITE, "size": 16}},
+            number={"suffix": "%", "font": {"color": WHITE, "size": 28}},
+            gauge={
+                "axis": {"range": [0, 100], "tickcolor": WHITE},
+                "bar": {"color": RED},
+                "bgcolor": "rgba(255,255,255,0.04)",
+                "borderwidth": 1,
+                "bordercolor": "rgba(255,255,255,0.16)",
+                "steps": [
+                    {"range": [0, 30], "color": "rgba(255,255,255,0.06)"},
+                    {"range": [30, 70], "color": "rgba(230,27,31,0.16)"},
+                    {"range": [70, 100], "color": "rgba(230,27,31,0.30)"},
+                ],
+            },
+            domain={"x": [0.00, 0.48], "y": [0.08, 1.0]},
+        )
+    )
+
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=brake,
+            title={"text": "Brake", "font": {"color": WHITE, "size": 16}},
+            number={"suffix": "%", "font": {"color": WHITE, "size": 28}},
+            gauge={
+                "axis": {"range": [0, 100], "tickcolor": WHITE},
+                "bar": {"color": WHITE},
+                "bgcolor": "rgba(255,255,255,0.04)",
+                "borderwidth": 1,
+                "bordercolor": "rgba(255,255,255,0.16)",
+                "steps": [
+                    {"range": [0, 30], "color": "rgba(255,255,255,0.06)"},
+                    {"range": [30, 70], "color": "rgba(255,255,255,0.13)"},
+                    {"range": [70, 100], "color": "rgba(230,27,31,0.30)"},
+                ],
+            },
+            domain={"x": [0.52, 1.00], "y": [0.08, 1.0]},
+        )
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color=WHITE),
+        margin=dict(l=0, r=0, t=10, b=0),
+        height=260,
+    )
+
+    with target.container():
+        st.plotly_chart(fig, use_container_width=True, key=f"driver_inputs_{iteration}_{live}_{id(target)}")
+
+        d1, d2, d3, d4 = st.columns(4)
+        d1.metric("Speed", f"{speed} km/h")
+        d2.metric("RPM", f"{rpm:,}")
+        d3.metric("Throttle", f"{throttle:.0f}%")
+        d4.metric("Brake", f"{brake:.0f}%")
+
+        st.markdown(
+            f"""
+<div class="premium-card-red">
+<div class="card-title">Driver Input Telemetry</div>
+{status_row("Throttle Position", f"{throttle:.1f}%")}
+{status_row("Brake Pressure", f"{brake:.1f}%")}
+{status_row("Engine Speed", f"{rpm:,} RPM")}
+{status_row("Vehicle Speed", f"{speed} km/h")}
+{status_row("Fuel Rate", f"{fuel_rate:.1f} L/100km")}
+{status_row("Driver Status", "Hard braking detected" if brake > 70 else "Normal driving")}
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    return throttle, brake, speed, rpm, fuel_rate
+
 
 def render_fuel_chart(target, iteration=0, live=False):
     profile = get_profile()
@@ -2171,17 +2273,52 @@ def render_fleet_dashboard():
 
     with live_tab:
         if has_feature("obd"):
-            live_col1, live_col2 = st.columns([2.3, 1])
+            st.markdown(
+                """
+<div class="premium-card-red">
+<div class="card-title">Live Telemetry Stream</div>
+<div class="card-text">
+Real-time vehicle telemetry with CAN/OBD data, driver throttle and brake input,
+RPM, speed, fuel rate and event detection.
+</div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            live_col1, live_col2 = st.columns([1.55, 1])
+
             telemetry_box = live_col1.empty()
-            log_box = live_col2.empty()
+            driver_box = live_col2.empty()
+
+            log_col1, log_col2 = st.columns([1.5, 1])
+            log_box = log_col1.empty()
+            status_box = log_col2.empty()
 
             render_telemetry_chart(telemetry_box, live=False)
+            render_driver_inputs(driver_box, live=False)
 
             log_box.markdown(
                 """
 <div class="terminal-log">
-<span class="log-time">[SYS]</span>
-Standing by. Click START LIVE STREAM to start telemetry simulation.
+<span class="log-time">[SYS]</span> Telemetry stream armed<br>
+<span class="log-time">[CAN]</span> Awaiting live packets<br>
+<span class="log-time">[OBD]</span> RPM, speed, throttle and brake channels ready<br>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            status_box.markdown(
+                f"""
+<div class="premium-card-red">
+<div class="card-title">Telemetry Status</div>
+{status_row("Vehicle", get_asset_id())}
+{status_row("CAN Gateway", "Connected")}
+{status_row("OBD Channel", "Ready")}
+{status_row("Sample Rate", "50 Hz")}
+{status_row("Packet Loss", "0.2%")}
+{status_row("Stream Mode", "Standby")}
 </div>
                 """,
                 unsafe_allow_html=True,
@@ -2192,24 +2329,39 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
 
                 for i in range(len(route_data)):
                     render_telemetry_chart(telemetry_box, iteration=i, live=True)
+                    throttle, brake, speed, rpm, fuel_rate = render_driver_inputs(driver_box, iteration=i, live=True)
 
                     current_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-                    hex_code = hex(np.random.randint(4096, 65535)).upper()[2:]
+                    can_id = hex(np.random.randint(0x300, 0x7FF)).upper().replace("X", "x")
 
-                    if i == int(len(route_data) * 0.60):
+                    if brake > 75:
+                        event_level = "CRITICAL"
+                        event_text = "HARD_BRAKE_EVENT"
+                        event_class = "log-error"
+                    elif throttle > 82:
+                        event_level = "WARN"
+                        event_text = "HIGH_THROTTLE_INPUT"
+                        event_class = "log-warning"
+                    elif rpm > 3100:
+                        event_level = "WARN"
+                        event_text = "HIGH_RPM_WINDOW"
+                        event_class = "log-warning"
+                    else:
+                        event_level = "INFO"
+                        event_text = "CAN_FRAME_OK"
+                        event_class = ""
+
+                    if event_class:
                         log_str = (
                             f"<span class='log-time'>[{current_time}]</span>"
-                            f"<span class='log-error'> CRITICAL 0x{hex_code} : HARD BRAKE PREDICTED</span><br>"
-                        )
-                    elif np.random.rand() > 0.86:
-                        log_str = (
-                            f"<span class='log-time'>[{current_time}]</span>"
-                            f"<span class='log-warning'> WARN 0x{hex_code} : TQ_SHIFT_LATENCY</span><br>"
+                            f"<span class='{event_class}'> {event_level} {can_id} : {event_text} "
+                            f"| TPS={throttle:.0f}% BRK={brake:.0f}% RPM={rpm} SPD={speed}</span><br>"
                         )
                     else:
                         log_str = (
                             f"<span class='log-time'>[{current_time}]</span>"
-                            f" INFO 0x{hex_code} : CAN_BUS_SYNC_OK<br>"
+                            f" {event_level} {can_id} : {event_text} "
+                            f"| TPS={throttle:.0f}% BRK={brake:.0f}% RPM={rpm} SPD={speed}<br>"
                         )
 
                     log_lines.append(log_str)
@@ -2226,12 +2378,32 @@ Standing by. Click START LIVE STREAM to start telemetry simulation.
                         unsafe_allow_html=True,
                     )
 
+                    driver_state = "Hard braking" if brake > 75 else "Aggressive acceleration" if throttle > 82 else "Normal"
+
+                    status_box.markdown(
+                        f"""
+<div class="premium-card-red">
+<div class="card-title">Telemetry Status</div>
+{status_row("Vehicle", get_asset_id())}
+{status_row("CAN Gateway", "Connected")}
+{status_row("OBD Channel", "Streaming")}
+{status_row("Sample Rate", "50 Hz")}
+{status_row("Packet Loss", f"{np.random.uniform(0.1, 0.6):.1f}%")}
+{status_row("Driver State", driver_state)}
+{status_row("Last CAN ID", can_id)}
+{status_row("Stream Mode", "Live")}
+</div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
                     time.sleep(0.06)
+
         else:
             upgrade_card(
                 "Live OBD/CAN Telemetry",
                 "Fleet Pro",
-                "Unlock RPM, speed, fuel use, fault data and live CAN bus telemetry across the fleet.",
+                "Unlock RPM, speed, fuel use, throttle, brake pressure and live CAN bus telemetry across the fleet.",
             )
 
     with map_tab:
