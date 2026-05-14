@@ -2340,7 +2340,7 @@ def render_fleet_dashboard():
                     ["07:41", "FX-8805", "Brake wear threshold", "Low", "3,125 km"],
                     ["06:15", "FX-8802", "Battery voltage drift", "Medium", "720 km"],
                 ],
-                columns=["Timestamp", "Asset", "Alert", "Severity", "ETA"],
+                columns=["Timestamp", "CAR ID", "Alert", "Severity", "ETA"],
             )
 
             vehicle_data = pd.DataFrame(
@@ -2351,7 +2351,7 @@ def render_fleet_dashboard():
                     ["FX-8804", "Healthy", 91, "15.6%", "22 days", "Low"],
                     ["FX-8805", "Warning", 84, "11.7%", "7 days", "Medium"],
                 ],
-                columns=["Asset", "Status", "Driver Score", "Fuel Reduction", "Next Service", "Risk"],
+                columns=["CAR ID", "Status", "Driver Score", "Fuel Reduction", "Next Service", "Risk"],
             )
 
             r1, r2 = st.columns(2)
