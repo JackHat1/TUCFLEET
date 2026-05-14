@@ -2439,7 +2439,11 @@ driver throttle/brake input and live event detection.
 
                 for i in range(len(route_data)):
                     render_telemetry_chart(telemetry_box, iteration=i, live=True)
-                    throttle, brake, speed, rpm, fuel_rate = render_driver_inputs(driver_box, iteration=i, live=True)
+                    throttle, brake, speed, rpm, fuel_rate, driver_state = render_driver_inputs(
+    driver_box,
+    iteration=i,
+    live=True,
+)
 
                     current_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
                     can_id = hex(np.random.randint(0x300, 0x7FF)).upper().replace("X", "x")
@@ -2487,8 +2491,6 @@ driver throttle/brake input and live event detection.
                         """,
                         unsafe_allow_html=True,
                     )
-
-                    driver_state = "Hard braking" if brake > 75 else "Aggressive acceleration" if throttle > 82 else "Normal"
 
                     status_box.markdown(
                         f"""
